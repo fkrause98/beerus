@@ -1,11 +1,11 @@
+use crate::config::Config;
 use async_trait::async_trait;
 use ethers::types::{Address, Transaction, H256, U256};
-use eyre::Result;
+use eyre::{eyre, Result};
 use helios::client::{Client, ClientBuilder, FileDB};
+use helios::prelude::ExecutionBlock;
 use helios::types::{BlockTag, CallOpts};
 use std::primitive::u64;
-
-use crate::config::Config;
 
 use super::EthereumLightClient;
 
@@ -69,6 +69,16 @@ impl EthereumLightClient for HeliosLightClient {
 
     async fn estimate_gas(&self, opts: &CallOpts) -> Result<u64> {
         self.helios_light_client.estimate_gas(opts).await
+    }
+
+    async fn get_block_by_hash(&self, hash: &str, full_tx: bool) -> Result<Option<ExecutionBlock>> {
+        let hash = hex::decode(
+            hash.strip_prefix("0x")
+                .ok_or_else(|| eyre!("Non-valid hex string"))?,
+        )?;
+        self.helios_light_client
+            .get_block_by_hash(&hash, full_tx)
+            .await
     }
 }
 

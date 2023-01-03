@@ -3,7 +3,10 @@ pub mod helios_lightclient;
 use async_trait::async_trait;
 use ethers::types::{Address, Transaction, H256, U256};
 use eyre::Result;
-use helios::types::{BlockTag, CallOpts};
+use helios::{
+    prelude::ExecutionBlock,
+    types::{BlockTag, CallOpts},
+};
 use mockall::automock;
 
 /// Ethereum light client trait.
@@ -127,4 +130,6 @@ pub trait EthereumLightClient: Send + Sync {
     /// # TODO
     /// Add examples.
     async fn estimate_gas(&self, opts: &CallOpts) -> Result<u64>;
+
+    async fn get_block_by_hash(&self, hash: &str, full_tx: bool) -> Result<Option<ExecutionBlock>>;
 }

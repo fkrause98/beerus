@@ -230,6 +230,7 @@ impl Display for CommandResponse {
             CommandResponse::EthereumQueryEstimateGas(gas) => {
                 write!(f, "{gas}")
             }
+
             CommandResponse::EthereumQueryBlockByHash(block) => match block {
                 None => write!(f, "No such block"),
                 Some(block) => {

@@ -206,3 +206,14 @@ pub async fn query_estimate_gas(
 
     Ok(CommandResponse::EthereumQueryEstimateGas(gas))
 }
+pub async fn query_block_by_hash(
+    beerus: BeerusLightClient,
+    hash: String,
+    full_tx: bool,
+) -> Result<CommandResponse> {
+    let block = beerus
+        .ethereum_lightclient
+        .get_block_by_hash(&hash, full_tx)
+        .await?;
+    Ok(CommandResponse::EthereumQueryBlockByHash(block))
+}

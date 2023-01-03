@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand};
 use ethers::types::U256;
+use helios::prelude::ExecutionBlock;
 use serde_json::json;
 use starknet::core::types::FieldElement;
 
@@ -74,6 +75,13 @@ pub enum EthereumSubCommands {
     QueryEstimateGas {
         #[arg(short, long, value_name = "params")]
         params: String,
+    },
+    /// Get a block by its hash
+    QueryBlockByHash {
+        #[arg(short, long, value_name = "hash")]
+        hash: String,
+        #[arg(short, long, value_name = "full")]
+        full: bool,
     },
 }
 
@@ -164,6 +172,7 @@ pub enum CommandResponse {
     EthereumQueryTxByHash(String),
     EthereumQueryGasPrice(U256),
     EthereumQueryEstimateGas(u64),
+    EthereumQueryBlockByHash(Option<ExecutionBlock>),
     StarkNetQueryStateRoot(U256),
     StarkNetQueryContract(Vec<FieldElement>),
     StarkNetQueryGetStorageAt(FieldElement),
@@ -221,6 +230,13 @@ impl Display for CommandResponse {
             CommandResponse::EthereumQueryEstimateGas(gas) => {
                 write!(f, "{gas}")
             }
+            CommandResponse::EthereumQueryBlockByHash(block) => match block {
+                None => write!(f, "No such block"),
+                Some(block) => {
+                    let json_response = serde_json::to_string(&block).unwrap();
+                    write!(f, "{json_response}")
+                }
+            },
 
             // Print the state root.
             // Result looks like: 2343271987571512511202187232154229702738820280823720849834887135668366687374

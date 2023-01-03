@@ -131,5 +131,15 @@ pub trait EthereumLightClient: Send + Sync {
     /// Add examples.
     async fn estimate_gas(&self, opts: &CallOpts) -> Result<u64>;
 
+    /// Gets a block by its hash
+    /// # Arguments
+    /// * `hash` - A hex string, the hash of the block, must start with 0x.
+    /// # Returns
+    /// The block as an object, None if there isn't a block that matches
+    /// the given hash.
+    /// # Errors
+    /// If the call fails.
+    /// # TODO
+    /// Add examples.
     async fn get_block_by_hash(&self, hash: &str, full_tx: bool) -> Result<Option<ExecutionBlock>>;
 }

@@ -101,7 +101,7 @@ pub async fn query_estimate_gas(
 }
 
 #[openapi]
-#[get("/ethereum/block/hash/<hash>/<full>")]
+#[get("/ethereum/block_by_hash/<hash>/<full>")]
 pub async fn query_block_by_hash(
     beerus: &State<BeerusLightClient>,
     hash: &str,

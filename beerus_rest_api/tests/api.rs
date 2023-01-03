@@ -10,8 +10,9 @@ mod test {
         },
     };
     use beerus_rest_api::build_rocket_server;
-    use ethers::types::U256;
-    use ethers::types::{Address, Transaction};
+    use ethers::types::{Address, Transaction, H256, U256};
+    use helios::prelude::ExecutionBlock;
+    use helios::types::Transactions;
     use rocket::{http::Status, local::asynchronous::Client, uri};
     use starknet::{core::types::FieldElement, providers::jsonrpc::models::BlockHashAndNumber};
 
@@ -283,6 +284,67 @@ mod test {
         assert_eq!(response.into_string().await.unwrap(), "{\"chain_id\":1}");
     }
 
+    /// Test the `query_ethereum_block_by_number` endpoint.
+    /// `ethereum/get_block_by_number/<block_number>/<full_txs>`
+    /// Given normal conditions, when query block by number, then ok.
+    #[tokio::test]
+    async fn given_normal_conditions_when_query_block_by_number_then_ok() {
+        // Build mocks.
+        let (config, mut ethereum_lightclient, starknet_lightclient) = config_and_mocks();
+
+        let hash = H256::from_low_u64_be(1);
+        let expected_block = ExecutionBlock {
+            number: 1,
+            base_fee_per_gas: U256::from(100),
+            difficulty: U256::from(10),
+            extra_data: vec![],
+            gas_limit: 1,
+            gas_used: 1,
+            hash,
+            logs_bloom: vec![],
+            miner: Address::from_low_u64_be(1),
+            mix_hash: H256::from_low_u64_be(1),
+            nonce: String::from("1"),
+            parent_hash: H256::from_low_u64_be(1),
+            receipts_root: H256::from_low_u64_be(1),
+            sha3_uncles: H256::from_low_u64_be(1),
+            size: 1,
+            state_root: H256::from_low_u64_be(1),
+            timestamp: 1,
+            total_difficulty: 1,
+            transactions: Transactions::Full(vec![]),
+            transactions_root: H256::from_low_u64_be(1),
+            uncles: vec![],
+        };
+        let block_string = serde_json::to_string(&expected_block).unwrap();
+        let expected_block_value: serde_json::Value =
+            serde_json::from_str(block_string.as_str()).unwrap();
+        let expected_response = format!("{{\"block\":{expected_block_value}}}");
+        // Given
+        // Mock dependencies.
+        ethereum_lightclient
+            .expect_get_block_by_hash()
+            .return_once(move |_, _| Ok(Some(expected_block)));
+
+        let beerus = BeerusLightClient::new(
+            config,
+            Box::new(ethereum_lightclient),
+            Box::new(starknet_lightclient),
+        );
+
+        // Build the Rocket instance.
+        let client = Client::tracked(build_rocket_server(beerus).await)
+            .await
+            .expect("valid rocket instance");
+        let hash = hash.to_string();
+        let uri = uri!("/ethereum/block_by_hash/0x1/false");
+        // When
+        let response = client.get(uri).dispatch().await;
+
+        // Then
+        assert_eq!(response.status(), Status::Ok);
+        assert_eq!(response.into_string().await.unwrap(), expected_response);
+    }
     /// Test the `query_starknet_state_root` endpoint.
     /// `/starknet/state/root`
     /// Given normal conditions, when query starknet state root, then ok.

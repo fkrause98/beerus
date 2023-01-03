@@ -20,6 +20,8 @@ use rocket::{get, State};
 use rocket_okapi::openapi;
 use std::str::FromStr;
 
+use super::resp::QueryBlockByHash;
+
 #[openapi]
 #[get("/ethereum/balance/<address>")]
 pub async fn query_balance(
@@ -98,6 +100,15 @@ pub async fn query_estimate_gas(
     ApiResponse::from_result(query_estimate_gas_inner(beerus, transaction_object).await)
 }
 
+#[openapi]
+#[get("/ethereum/block/hash/<hash>/<full>")]
+pub async fn query_block_by_hash(
+    beerus: &State<BeerusLightClient>,
+    hash: &str,
+    full: bool,
+) -> ApiResponse<QueryBlockByHash> {
+    ApiResponse::from_result(query_block_by_hash_inner(beerus, hash, full).await)
+}
 /// Query the balance of an Ethereum address.
 /// # Arguments
 /// * `address` - The Ethereum address.
@@ -302,4 +313,32 @@ pub async fn query_estimate_gas_inner(
 
     let quantity = beerus.ethereum_lightclient.estimate_gas(&call_opts).await?;
     Ok(QueryEstimateGasResponse { quantity })
+}
+
+/// Query a block by its hash.
+/// # Arguments
+/// * `hash` - The blocks hash, as a hex-string with a leading 0x.
+/// # Returns
+/// `Ok(query_block_by_hash)` - The block query response.
+/// `Err(error)` - An error occurred.
+/// # Errors
+/// If the given hash is not a hex-string.
+pub async fn query_block_by_hash_inner(
+    beerus: &State<BeerusLightClient>,
+    hash: &str,
+    full: bool,
+) -> Result<QueryBlockByHash> {
+    let queried_block = beerus
+        .ethereum_lightclient
+        .get_block_by_hash(hash, full)
+        .await?;
+    match queried_block {
+        Some(block) => {
+            let block_json: String = serde_json::to_string(&block)?;
+            Ok(QueryBlockByHash {
+                block: Some(serde_json::from_str(&block_json)?),
+            })
+        }
+        None => Ok(QueryBlockByHash { block: None }),
+    }
 }

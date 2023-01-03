@@ -69,3 +69,8 @@ pub struct QueryGasPriceResponse {
 pub struct QueryEstimateGasResponse {
     pub quantity: u64,
 }
+#[derive(Serialize, JsonSchema)]
+#[serde(crate = "rocket::serde")]
+pub struct QueryBlockByHash {
+    pub block: Option<serde_json::Value>,
+}
